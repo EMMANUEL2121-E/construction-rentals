@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MS TRADERS - Equipment Yard</title>
+    
+    <!-- Link the Manifest for PWA installation -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="logo.png">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Custom scrollbar and print styles */
+        body { -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        @media print {
+            body { background: white !important; margin: 0; padding: 0; }
+            #app { overflow: visible !important; height: auto !important; }
+            .print\:hidden { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 max-w-md mx-auto relative shadow-2xl overflow-x-hidden font-sans pb-20 sm:pb-0 min-h-screen text-gray-900">
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <!-- Main App Container -->
+    <div id="app" class="h-full w-full"></div>
+
+    <script>
+        // --- TRANSLATIONS DICTIONARY ---
+        const dictionary = {
+            en: {
+                appName: "MS TRADERS", appDesc: "Offline Local App Demo", langToggle: "മലയാളം",
+                activeRentals: "Active Rentals", lowStock: "Low Stock Alerts", newRental: "New Rental",
+                returnItems: "Return Items", clients: "Clients", inventory: "Inventory", reports: "View Reports & Invoices",
+                searchNamePhone: "Search name or phone...", noClients: "No clients found.", newClient: "New Client",
+                fullName: "Full Name *", phone: "Phone Number *", locationOpt: "Site / Location (Optional)",
+                notesOpt: "Notes (Optional)", saveClient: "Save Client", saving: "Saving...", noItems: "No items in inventory.",
+                rate: "Rate", day: "day", avail: "avail", total: "Total", out: "Out", addItem: "Add Item", editItem: "Edit Item",
+                itemName: "Item Name *", totalQty: "Total Quantity *", dailyRate: "Daily Rate (₹) *", saveInventory: "Save Inventory",
+                step1: "Step 1: Select Client", searchClient: "Search client...", step2: "Step 2: Add Items", client: "Client",
+                items: "items", reviewRental: "Review Rental", step3: "Step 3: Confirm", clientDetails: "Client Details",
+                pickupDate: "Pickup Date", itemsAndRates: "Items & Rates", qty: "Qty", confirmRental: "Confirm Rental",
+                selectReturn: "Select Rental to Return", noActiveRentals: "No active rentals to return.", inspectReturns: "Inspect Returns",
+                rented: "Rented", ok: "OK", damaged: "Damaged", missing: "Missing", warning: "Warning", proceedBilling: "Proceed to Billing",
+                billingSummary: "Billing Summary", rentalDuration: "Rental Duration", days: "Days", adjustReturnDate: "Adjust Return Date",
+                chargesCalc: "Charges Calculation", baseRental: "Base Rental", damagePenalties: "Damage Penalties (₹)", missingFees: "Missing Item Fees (₹)",
+                discount: "Discount (₹)", finalBill: "Final Bill", confirmInvoice: "Confirm & Generate Invoice", processing: "Processing...",
+                invoice: "INVOICE", billedTo: "Billed To", invoiceDate: "Invoice Date", duration: "Duration", item: "Item", netTotal: "Net Total",
+                savePdf: "Save PDF", whatsapp: "WhatsApp", reportsOverview: "Reports Overview", totalRevenue: "Total Revenue",
+                completedRentals: "Completed Rentals", activeYardOut: "Active (Yard Out)", recentTransactions: "Recent Transactions",
+                noTransactions: "No completed transactions yet.", done: "Done", thankYou: "Thank you for choosing our services. Please ensure items are handled with care.",
+                errReq: "Please fill all required fields.", errSave: "Error saving data.", successRent: "Rental Confirmed!", successRet: "Return & Billing completed successfully!",
+                history: "Rental History", noHistory: "No rental history found.", activeLabel: "Active", returnedLabel: "Returned"
+            },
+            ml: {
+                appName: "MS TRADERS", appDesc: "ഓഫ്‌ലൈൻ ലോക്കൽ ആപ്പ്", langToggle: "English",
+                activeRentals: "സജീവ വാടകകൾ", lowStock: "സ്റ്റോക്ക് മുന്നറിയിപ്പ്", newRental: "പുതിയ വാടക",
+                returnItems: "തിരികെ നൽകുക", clients: "ഉപഭോക്താക്കൾ", inventory: "ഇൻവെൻ്ററി", reports: "റിപ്പോർട്ടുകൾ & ഇൻവോയ്‌സ്",
+                searchNamePhone: "പേരോ ഫോൺ നമ്പറോ തിരയുക...", noClients: "ഉപഭോക്താക്കളെ കണ്ടെത്തിയില്ല.", newClient: "പുതിയ ഉപഭോക്താവ്",
+                fullName: "മുഴുവൻ പേര് *", phone: "ഫോൺ നമ്പർ *", locationOpt: "സ്ഥലം (നിർബന്ധമില്ല)",
+                notesOpt: "കുറിപ്പുകൾ (നിർബന്ധമില്ല)", saveClient: "സേവ് ചെയ്യുക", saving: "സേവ് ചെയ്യുന്നു...", noItems: "ഇൻവെൻ്ററിയിൽ സാധനങ്ങളില്ല.",
+                rate: "നിരക്ക്", day: "ദിവസം", avail: "ലഭ്യം", total: "ആകെ", out: "പുറത്ത്", addItem: "പുതിയത് ചേർക്കുക", editItem: "തിരുത്തുക",
+                itemName: "സാധനത്തിൻ്റെ പേര് *", totalQty: "ആകെ എണ്ണം *", dailyRate: "പ്രതിദിന നിരക്ക് (₹) *", saveInventory: "സേവ് ചെയ്യുക",
+                step1: "ഘട്ടം 1: ഉപഭോക്താവിനെ തിരഞ്ഞെടുക്കുക", searchClient: "ഉപഭോക്താവിനെ തിരയുക...", step2: "ഘട്ടം 2: സാധനങ്ങൾ ചേർക്കുക", client: "ഉപഭോക്താവ്",
+                items: "സാധനങ്ങൾ", reviewRental: "വാടക പരിശോധിക്കുക", step3: "ഘട്ടം 3: ഉറപ്പാക്കുക", clientDetails: "ഉപഭോക്തൃ വിവരങ്ങൾ",
+                pickupDate: "കൊണ്ടുപോകുന്ന തീയതി", itemsAndRates: "സാധനങ്ങളും നിരക്കുകളും", qty: "എണ്ണം", confirmRental: "ഉറപ്പാക്കുക",
+                selectReturn: "തിരികെ നൽകാനുള്ളത് തിരഞ്ഞെടുക്കുക", noActiveRentals: "സജീവ വാടകകളില്ല.", inspectReturns: "തിരികെ ലഭിച്ചവ പരിശോധിക്കുക",
+                rented: "വാടകയ്ക്ക് എടുത്തത്", ok: "ശരി", damaged: "കേടുപാടുകൾ", missing: "നഷ്ടപ്പെട്ടവ", warning: "മുന്നറിയിപ്പ്", proceedBilling: "ബില്ലിംഗിലേക്ക് പോകുക",
+                billingSummary: "ബില്ലിംഗ് സംഗ്രഹം", rentalDuration: "വാടക കാലാവധി", days: "ദിവസങ്ങൾ", adjustReturnDate: "തീയതി മാറ്റുക",
+                chargesCalc: "നിരക്ക് കണക്കുകൂട്ടൽ", baseRental: "അടിസ്ഥാന വാടക", damagePenalties: "പിഴ (കേടുപാടുകൾ) (₹)", missingFees: "പിഴ (നഷ്ടപ്പെട്ടവ) (₹)",
+                discount: "കിഴിവ് (₹)", finalBill: "അവസാന ബിൽ", confirmInvoice: "ഇൻവോയ്സ് തയ്യാറാക്കുക", processing: "പ്രോസസ്സ് ചെയ്യുന്നു...",
+                invoice: "ഇൻവോയ്സ്", billedTo: "ബിൽ നൽകുന്നത്", invoiceDate: "തീയതി", duration: "കാലാവധി", item: "സാധനം", netTotal: "ആകെ തുക",
+                savePdf: "PDF സേവ് ചെയ്യുക", whatsapp: "WhatsApp", reportsOverview: "റിപ്പോർട്ടുകൾ", totalRevenue: "ആകെ വരുമാനം",
+                completedRentals: "പൂർത്തിയായ വാടകകൾ", activeYardOut: "സജീവമായവ (പുറത്ത്)", recentTransactions: "സമീപകാല ഇടപാടുകൾ",
+                noTransactions: "പൂർത്തിയായ ഇടപാടുകളില്ല.", done: "ശരി", thankYou: "ഞങ്ങളുടെ സേവനങ്ങൾ തിരഞ്ഞെടുത്തതിന് നന്ദി. സാധനങ്ങൾ ശ്രദ്ധയോടെ കൈകാര്യം ചെയ്യുക.",
+                errReq: "ആവശ്യമായ എല്ലാ വിവരങ്ങളും നൽകുക.", errSave: "സേവ് ചെയ്യുന്നതിൽ പിശക്.", successRent: "വാടക ഉറപ്പാക്കി!", successRet: "തിരികെ നൽകൽ പൂർത്തിയായി!",
+                history: "വാടക ചരിത്രം", noHistory: "ചരിത്രം കണ്ടെത്തിയില്ല.", activeLabel: "സജീവമാണ്", returnedLabel: "മടക്കി നൽകി"
+            }
+        };
+
+        // --- GLOBAL APP STATE ---
+        const state = {
+            lang: 'en',
+            currentView: 'dashboard',
+            navId: null, // General purpose ID for navigation
+            clients: JSON.parse(localStorage.getItem('mstraders_clients')) || [],
+            inventory: JSON.parse(localStorage.getItem('mstraders_inventory')) || [],
+            rentals: JSON.parse(localStorage.getItem('mstraders_rentals')) || [],
+            
+            // Transient states for flows
+            rentalSelections: {}, // { itemId: qty }
+            rentalClientId: null,
+            returnState: [], // [{ id, qty, returnedOk, damaged, missing, rate, name }]
+            returnRentalId: null,
+            tempBillingData: null // Stores calculated data for billing step
+        };
+
+        // --- UTILITY FUNCTIONS ---
+        const t = (key) => dictionary[state.lang][key] || key;
+
+        const saveToLocal = () => {
+            localStorage.setItem('mstraders_clients', JSON.stringify(state.clients));
+            localStorage.setItem('mstraders_inventory', JSON.stringify(state.inventory));
+            localStorage.setItem('mstraders_rentals', JSON.stringify(state.rentals));
+        };
+
+        const showToast = (message, type = 'success') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full text-white font-bold shadow-lg text-sm whitespace-nowrap transition-all ${type === 'error' ? 'bg-red-600' : 'bg-green-600'}`;
+            toast.innerText = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        };
+
+        window.navigate = (view, dataId = null) => {
+            state.currentView = view;
+            state.navId = dataId;
+            // Reset transient states if going to dashboard or starting new flows
+            if(view === 'dashboard' || view === 'rental-start') {
+                state.rentalSelections = {};
+                state.rentalClientId = null;
+            }
+            renderApp();
+            window.scrollTo(0, 0);
+        };
+
+        window.toggleLang = () => {
+            state.lang = state.lang === 'en' ? 'ml' : 'en';
+            renderApp();
+        };
+
+        // UI Components
+        const AppLogo = (size = 48, className = "") => `
+            <svg width="${size}" height="${size}" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="${className}">
+                <rect width="48" height="48" rx="12" fill="#F59E0B"/>
+                <path d="M12 34V14L24 26L36 14V34" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        `;
+
+        const TopBar = (title, backAction = null, rightAction = '') => `
+            <div class="bg-blue-600 text-white p-4 flex items-center shadow-md sticky top-0 z-10 print:hidden">
+                ${backAction ? `<button onclick="${backAction}" class="mr-3 p-1 rounded-full hover:bg-blue-700 active:bg-blue-800 transition"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>` : ''}
+                <h1 class="text-lg font-bold flex-1">${title}</h1>
+                ${rightAction}
+            </div>
+        `;
+
+        const Card = (content, onClick = '', extraClass = '') => `
+            <div ${onClick ? `onclick="${onClick}"` : ''} class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 ${onClick ? 'active:bg-gray-50 cursor-pointer' : ''} ${extraClass}">
+                ${content}
+            </div>
+        `;
+
+        const FAB = (icon, onClick) => `
+            <button onclick="${onClick}" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 active:scale-95 transition-transform print:hidden">
+                <i data-lucide="${icon}" class="w-6 h-6"></i>
+            </button>
+        `;
+
+        // --- INJECT FAVICON ---
+        const initFavicon = () => {
+            const svgIcon = encodeURIComponent(`<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="12" fill="#F59E0B"/><path d="M12 34V14L24 26L36 14V34" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>`);
+            let link = document.querySelector("link[rel~='icon']");
+            if (!link) {
+                link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link);
+            }
+            link.href = `data:image/svg+xml,${svgIcon}`;
+        };
+
+        // --- RENDER ENGINE ---
+        function renderApp() {
+            const appDiv = document.getElementById('app');
+            let html = '';
+
+            switch(state.currentView) {
+                case 'dashboard': html = renderDashboard(); break;
+                case 'clients': html = renderClients(); break;
+                case 'client-details': html = renderClientDetails(); break;
+                case 'client-form': html = renderClientForm(); break;
+                case 'inventory': html = renderInventory(); break;
+                case 'inventory-form': html = renderInventoryForm(); break;
+                case 'rental-start': html = renderRentalStart(); break;
+                case 'rental-items': html = renderRentalItems(); break;
+                case 'rental-summary': html = renderRentalSummary(); break;
+                case 'return-select': html = renderReturnSelect(); break;
+                case 'return-process': html = renderReturnProcess(); break;
+                case 'return-billing': html = renderReturnBilling(); break;
+                case 'invoice': html = renderInvoice(); break;
+                case 'reports': html = renderReports(); break;
+                default: html = renderDashboard();
+            }
+
+            appDiv.innerHTML = html;
+            lucide.createIcons(); // Re-initialize icons for new DOM elements
+        }
+
+        // --- VIEW GENERATORS ---
+
+        function renderDashboard() {
+            const activeRentalsCount = state.rentals.filter(r => r.status === 'active').length;
+            const lowStockCount = state.inventory.filter(i => i.availableQty <= 2 && i.totalQty > 0).length;
+
+            return `
+                <div class="flex flex-col h-full min-h-screen pb-6">
+                    <div class="bg-blue-600 text-white p-6 pb-10 rounded-b-3xl shadow-md flex justify-between items-start">
+                        <div class="flex items-center space-x-3">
+                            ${AppLogo(42, "shadow-sm rounded-xl border-2 border-blue-500")}
+                            <div>
+                                <h1 class="text-2xl font-bold mb-1">${t('appName')}</h1>
+                                <p class="text-blue-200 text-sm">${t('appDesc')}</p>
+                            </div>
+                        </div>
+                        <button onclick="toggleLang()" class="bg-white/20 px-4 py-1.5 rounded-full text-sm font-bold active:bg-white/30 border border-white/30">
+                            ${t('langToggle')}
+                        </button>
+                    </div>
+
+                    <div class="-mt-6 px-4 grid grid-cols-2 gap-4">
+                        ${Card(`
+                            <div class="flex flex-col items-center justify-center text-center">
+                                <span class="text-3xl font-bold text-blue-600">${activeRentalsCount}</span>
+                                <span class="text-xs text-gray-500 font-medium uppercase tracking-wider mt-1">${t('activeRentals')}</span>
+                            </div>
+                        `)}
+                        ${Card(`
+                            <div class="flex flex-col items-center justify-center text-center">
+                                <span class="text-3xl font-bold ${lowStockCount > 0 ? 'text-amber-500' : 'text-green-500'}">${lowStockCount}</span>
+                                <span class="text-xs text-gray-500 font-medium uppercase tracking-wider mt-1">${t('lowStock')}</span>
+                            </div>
+                        `)}
+                    </div>
+
+                    <div class="p-4 grid grid-cols-2 gap-4 mt-2">
+                        <button onclick="navigate('rental-start')" class="flex flex-col items-center justify-center p-6 rounded-2xl text-white shadow-sm active:scale-95 transition-transform bg-blue-600">
+                            <i data-lucide="clipboard-list" class="w-8 h-8 mb-2"></i><span class="font-semibold text-center">${t('newRental')}</span>
+                        </button>
+                        <button onclick="navigate('return-select')" class="flex flex-col items-center justify-center p-6 rounded-2xl text-white shadow-sm active:scale-95 transition-transform bg-indigo-600">
+                            <i data-lucide="rotate-ccw" class="w-8 h-8 mb-2"></i><span class="font-semibold text-center">${t('returnItems')}</span>
+                        </button>
+                        <button onclick="navigate('clients')" class="flex flex-col items-center justify-center p-6 rounded-2xl text-white shadow-sm active:scale-95 transition-transform bg-teal-600">
+                            <i data-lucide="user" class="w-8 h-8 mb-2"></i><span class="font-semibold text-center">${t('clients')}</span>
+                        </button>
+                        <button onclick="navigate('inventory')" class="flex flex-col items-center justify-center p-6 rounded-2xl text-white shadow-sm active:scale-95 transition-transform bg-sky-600">
+                            <i data-lucide="package" class="w-8 h-8 mb-2"></i><span class="font-semibold text-center">${t('inventory')}</span>
+                        </button>
+                    </div>
+
+                    <div class="px-4 mt-2">
+                        <button onclick="navigate('reports')" class="w-full flex items-center justify-center space-x-2 bg-gray-800 text-white p-4 rounded-2xl active:bg-gray-700">
+                            <i data-lucide="file-text" class="w-5 h-5"></i>
+                            <span class="font-semibold">${t('reports')}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- CLIENTS ---
+        window.filterClients = (query) => {
+            const q = query.toLowerCase();
+            const filtered = state.clients.filter(c => c.name.toLowerCase().includes(q) || c.phone.includes(q));
+            
+            let listHtml = filtered.length === 0 ? `<div class="text-center text-gray-500 mt-10">${t('noClients')}</div>` : '';
+            filtered.forEach(c => {
+                listHtml += Card(`
+                    <div class="font-bold text-lg text-gray-800">${c.name}</div>
+                    <div class="text-gray-600">${c.phone}</div>
+                    ${c.location ? `<div class="text-sm text-gray-500 mt-1">📍 ${c.location}</div>` : ''}
+                `, `Maps('client-details', '${c.id}')`, 'mb-3');
+            });
+            document.getElementById('client-list').innerHTML = listHtml;
+        };
+
+        function renderClients() {
+            return `
+                <div class="min-h-screen bg-gray-50">
+                    ${TopBar(t('clients'), "navigate('dashboard')")}
+                    <div class="p-4 pb-24">
+                        <div class="bg-white rounded-xl flex items-center p-3 mb-4 shadow-sm border border-gray-100 relative">
+                            <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-4"></i>
+                            <input type="text" class="w-full pl-10 pr-4 outline-none text-lg" placeholder="${t('searchNamePhone')}" oninput="filterClients(this.value)">
+                        </div>
+                        <div id="client-list">
+                            ${state.clients.length === 0 ? `<div class="text-center text-gray-500 mt-10">${t('noClients')}</div>` : 
+                                state.clients.map(c => Card(`
+                                    <div class="font-bold text-lg text-gray-800">${c.name}</div>
+                                    <div class="text-gray-600">${c.phone}</div>
+                                    ${c.location ? `<div class="text-sm text-gray-500 mt-1">📍 ${c.location}</div>` : ''}
+                                `, `Maps('client-details', '${c.id}')`, 'mb-3')).join('')
+                            }
+                        </div>
+                    </div>
+                    ${FAB('plus', "navigate('client-form')")}
+                </div>
+            `;
+        }
+
+        window.submitClientForm = () => {
+            const name = document.getElementById('cf-name').value;
+            const phone = document.getElementById('cf-phone').value;
+            const location = document.getElementById('cf-location').value;
+            const notes = document.getElementById('cf-notes').value;
+
+            if (!name || !phone) return showToast(t('errReq'), 'error');
+
+            state.clients.push({ id: Date.now().toString(), name, phone, location, notes, createdAt: new Date().toISOString() });
+            saveToLocal();
+            navigate('clients');
+        };
+
+        function renderClientForm() {
+            return `
+                <div class="min-h-screen bg-white">
+                    ${TopBar(t('newClient'), "navigate('clients')")}
+                    <div class="p-6 space-y-5">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">${t('fullName')}</label>
+                            <input id="cf-name" type="text" class="w-full p-4 border border-gray-200 rounded-xl text-lg focus:border-blue-500 focus:ring-1 outline-none" placeholder="e.g. John Builders">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">${t('phone')}</label>
+                            <input id="cf-phone" type="tel" class="w-full p-4 border border-gray-200 rounded-xl text-lg focus:border-blue-500 focus:ring-1 outline-none" placeholder="9988776655">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">${t('locationOpt')}</label>
+                            <input id="cf-location" type="text" class="w-full p-4 border border-gray-200 rounded-xl text-lg focus:border-blue-500 focus:ring-1 outline-none" placeholder="Site address">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">${t('notesOpt')}</label>
+                            <textarea id="cf-notes" class="w-full p-4 border border-gray-200 rounded-xl text-lg focus:border-blue-500 focus:ring-1 outline-none" rows="3"></textarea>
+                        </div>
+                        <button onclick="submitClientForm()" class="w-full bg-blue-600 text-white font-bold text-lg p-4 rounded-xl mt-6 active:bg-blue-700">${t('saveClient')}</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderClientDetails() {
+            const client = state.clients.find(c => c.id === state.navId);
+            if (!client) return renderClients();
+
+            const clientRentals = state.rentals.filter(r => r.clientId === client.id).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            let historyHtml = clientRentals.length === 0 ? Card(`<div class="text-center text-gray-500">${t('noHistory')}</div>`) : '';
+            clientRentals.forEach(r => {
+                const totalItems = r.items.reduce((acc, i) => acc + i.qty, 0);
+                const statusBadge = r.status === 'active' 
+                    ? `<div class="px-2 py-1 text-xs font-bold rounded bg-amber-100 text-amber-800 border border-amber-200">${t('activeLabel')}</div>`
+                    : `<div class="px-2 py-1 text-xs font-bold rounded bg-green-100 text-green-800 border border-green-200">${t('returnedLabel')}</div>`;
+                
+                const billingHtml = (r.status === 'returned' && r.billing) ? `
+                    <div class="mt-3 pt-2 border-t border-gray-100 text-sm font-bold text-gray-800 flex justify-between">
+                        <span>${t('total')}:</span><span class="text-blue-600">₹${r.billing.finalTotal.toFixed(2)}</span>
+                    </div>` : '';
+
+                historyHtml += Card(`
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-bold text-gray-800">${t('pickupDate')}: ${r.pickupDate}</div>
+                            <div class="text-xs text-gray-500 mt-1">${totalItems} ${t('items')}</div>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                    ${billingHtml}
+                `, `Maps('${r.status === 'returned' ? 'invoice' : 'return-process'}', '${r.id}')`, 'mb-2');
+            });
+
+            return `
+                <div class="min-h-screen bg-gray-50 flex flex-col">
+                    ${TopBar(client.name, "navigate('clients')")}
+                    <div class="p-4 flex-1 overflow-y-auto pb-24 space-y-4">
+                        ${Card(`
+                            <div class="text-sm font-bold text-gray-500 uppercase mb-2">${t('clientDetails')}</div>
+                            <div class="flex items-center mb-2"><span class="w-8 text-center">📞</span> <span class="font-medium text-gray-800">${client.phone}</span></div>
+                            ${client.location ? `<div class="flex items-center mb-2"><span class="w-8 text-center">📍</span> <span class="text-gray-700">${client.location}</span></div>` : ''}
+                            ${client.notes ? `<div class="mt-3 p-3 bg-gray-100 rounded-lg text-sm text-gray-700 italic border border-gray-200">"${client.notes}"</div>` : ''}
+                        `)}
+                        <div>
+                            <h2 class="text-sm font-bold text-gray-500 uppercase ml-1 mb-2">${t('history')}</h2>
+                            <div class="space-y-2">${historyHtml}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- INVENTORY ---
+        function renderInventory() {
+            let listHtml = state.inventory.length === 0 ? `<div class="text-center text-gray-500 mt-10">${t('noItems')}</div>` : '';
+            state.inventory.forEach(item => {
+                listHtml += Card(`
+                    <div class="flex justify-between items-center w-full">
+                        <div>
+                            <div class="font-bold text-lg text-gray-800">${item.name}</div>
+                            <div class="text-sm text-gray-500">${t('rate')}: ₹${item.defaultRate}/${t('day')}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-lg text-blue-600">${item.availableQty} <span class="text-sm text-gray-400 font-normal">${t('avail')}</span></div>
+                            <div class="text-xs text-gray-500">${t('total')}: ${item.totalQty} | ${t('out')}: ${item.rentedQty || 0}</div>
+                        </div>
+                    </div>
+                `, `Maps('inventory-form', '${item.id}')`, 'mb-3');
+            });
+
+            return `
+                <div class="min-h-screen bg-gray-50">
+                    ${TopBar(t('inventory'), "navigate('dashboard')")}
+                    <div class="p-4 pb-24 space-y-3">${listHtml}</div>
+                    ${FAB('plus', "navigate('inventory-form')")}
+                </div>
+            `;
+        }
+
+        window.submitInventoryForm = () => {
+            const name = document.getElementById('if-name').value;
+            const totalQty = document.getElementById('if-qty').value;
+            const defaultRate = document.getElementById('if-rate').value;
+
+            if (!name || totalQty === '' || defaultRate === '') return showToast(t('errReq'), 'error');
+            
+            const total = parseInt(totalQty);
+            const rate = parseFloat(defaultRate);
+            
+            let itemIndex = -1;
+            let currentRented = 0;
+            let currentDamaged = 0;
+
+            if (state.navId) {
+                itemIndex = state.inventory.findIndex(i => i.id === state.navId);
+                if (itemIndex > -1) {
+                    currentRented = state.inventory[itemIndex].rentedQty || 0;
+                    currentDamaged = state.inventory[itemIndex].damagedQty || 0;
+                }
+            }
+
+            const available = total - currentRented - currentDamaged;
+
+            const payload = {
+                name, totalQty: total, defaultRate: rate,
+                rentedQty: currentRented, damagedQty: currentDamaged, availableQty: available
+            };
+
+            if (itemIndex > -1) {
+                state.inventory[itemIndex] = { ...state.inventory[itemIndex], ...payload };
+            } else {
+                payload.id = Date.now().toString();
+                payload.createdAt = new Date().toISOString();
+                state.inventory.push(payload);
+            }
+
+            saveToLocal();
+            navigate('inventory');
+        };
+
+        function renderInventoryForm() {
+            const isEdit = !!state.navId;
+            const item = isEdit ? state.inventory.find(i => i.id === state.navId) : { name: '', totalQty: '', defaultRate: '' };
+
+            return `
+                <div class="min-h-screen bg-white">
+                    ${TopBar(isEdit ? t('editItem') : t('addItem'), "navigate('inventory')")}
+                    <div class="p-6 space-y-5">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700 mb-1">${t('itemName')}</label>
+                            <input id="if-name" type="text" value="${item.name}" class="w-full p-4 border border-gray-200 rounded-xl text-lg outline-none focus:border-blue-500" placeholder="e.g. Jackey, Spanner">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">${t('totalQty')}</label>
+                                <input id="if-qty" type="number" value="${item.totalQty}" class="w-full p-4 border border-gray-200 rounded-xl text-lg outline-none focus:border-blue-500" placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-1">${t('dailyRate')}</label>
+                                <input id="if-rate" type="number" value="${item.defaultRate}" class="w-full p-4 border border-gray-200 rounded-xl text-lg outline-none focus:border-blue-500" placeholder="0.00">
+                            </div>
+                        </div>
+                        <button onclick="submitInventoryForm()" class="w-full bg-blue-600 text-white font-bold text-lg p-4 rounded-xl mt-6 active:bg-blue-700">${t('saveInventory')}</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- RENTAL FLOW ---
+        window.filterRentalClients = (query) => {
+            const q = query.toLowerCase();
+            const filtered = state.clients.filter(c => c.name.toLowerCase().includes(q) || c.phone.includes(q));
+            let listHtml = '';
+            filtered.forEach(c => {
+                listHtml += Card(`
+                    <div class="font-bold text-lg text-gray-800">${c.name}</div>
+                    <div class="text-gray-500 text-sm">${c.phone}</div>
+                `, `Maps('rental-items', '${c.id}')`, 'hover:border-blue-500 border-2 border-transparent mb-2');
+            });
+            document.getElementById('rental-client-list').innerHTML = listHtml;
+        };
+
+        function renderRentalStart() {
+            return `
+                <div class="min-h-screen bg-gray-50 flex flex-col">
+                    ${TopBar(t('step1'), "navigate('dashboard')")}
+                    <div class="p-4 flex-1">
+                        <div class="bg-white rounded-xl flex items-center p-3 mb-4 shadow-sm border border-gray-200 relative">
+                            <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-4"></i>
+                            <input type="text" class="w-full pl-10 outline-none text-lg" placeholder="${t('searchClient')}" oninput="filterRentalClients(this.value)">
+                        </div>
+                        <div id="rental-client-list" class="space-y-2">
+                            ${state.clients.map(c => Card(`
+                                <div class="font-bold text-lg text-gray-800">${c.name}</div>
+                                <div class="text-gray-500 text-sm">${c.phone}</div>
+                            `, `Maps('rental-items', '${c.id}')`, 'hover:border-blue-500 border-2 border-transparent mb-2')).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.updateRentalQty = (itemId, delta, availableQty, name, rate) => {
+            let current = state.rentalSelections[itemId]?.qty || 0;
+            let newQty = Math.max(0, Math.min(availableQty, current + delta));
+            
+            if (newQty === 0) {
+                delete state.rentalSelections[itemId];
+            } else {
+                state.rentalSelections[itemId] = { id: itemId, name, qty: newQty, rate };
+            }
+            
+            // Update DOM specifically to avoid re-rendering entire list and losing scroll
+            document.getElementById(`ri-qty-${itemId}`).innerText = newQty;
+            
+            // Update footer
+            let totalSelected = Object.values(state.rentalSelections).reduce((acc, curr) => acc + curr.qty, 0);
+            const footer = document.getElementById('rental-items-footer');
+            if (totalSelected > 0) {
+                footer.style.display = 'block';
+                document.getElementById('rental-items-count').innerText = `${totalSelected} ${t('items')}`;
+            } else {
+                footer.style.display = 'none';
+            }
+        };
+
+        function renderRentalItems() {
+            state.rentalClientId = state.navId;
+            const client = state.clients.find(c => c.id === state.navId);
+            if (!client) return renderDashboard();
+
+            let itemsHtml = '';
+            state.inventory.filter(i => i.availableQty > 0).forEach(item => {
+                const qty = state.rentalSelections[item.id]?.qty || 0;
+                itemsHtml += Card(`
+                    <div class="flex flex-col sm:flex-row justify-between items-center sm:items-center w-full">
+                        <div class="w-full sm:w-auto mb-3 sm:mb-0">
+                            <div class="font-bold text-lg">${item.name}</div>
+                            <div class="text-sm text-gray-500">${t('avail')}: ${item.availableQty} | ${t('rate')}: ₹${item.defaultRate}/${t('day')}</div>
+                        </div>
+                        <div class="flex items-center space-x-4 bg-gray-100 rounded-full p-1">
+                            <button onclick="updateRentalQty('${item.id}', -1, ${item.availableQty}, '${item.name}', ${item.defaultRate})" class="w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-sm text-blue-600 active:bg-gray-200">
+                                <i data-lucide="minus" class="w-6 h-6"></i>
+                            </button>
+                            <span id="ri-qty-${item.id}" class="text-2xl font-bold w-8 text-center">${qty}</span>
+                            <button onclick="updateRentalQty('${item.id}', 1, ${item.availableQty}, '${item.name}', ${item.defaultRate})" class="w-12 h-12 flex items-center justify-center bg-blue-600 rounded-full shadow-sm text-white active:bg-blue-700">
+                                <i data-lucide="plus" class="w-6 h-6"></i>
+                            </button>
+                        </div>
+                    </div>
+                `, '', 'mb-3');
+            });
+
+            const totalSelected = Object.values(state.rentalSelections).reduce((acc, curr) => acc + curr.qty, 0);
+
+            return `
+                <div class="min-h-screen bg-gray-50 flex flex-col">
+                    ${TopBar(t('step2'), "navigate('rental-start')")}
+                    <div class="p-4 pb-28 flex-1 overflow-y-auto">
+                        <div class="mb-4 text-sm text-gray-500 font-bold uppercase">${t('client')}: ${client.name}</div>
+                        <div class="space-y-3">${itemsHtml}</div>
+                    </div>
+                    
+                    <div id="rental-items-footer" class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] border-t border-gray-100" style="display: ${totalSelected > 0 ? 'block' : 'none'};">
+                        <button onclick="navigate('rental-summary')" class="w-full bg-blue-600 text-white font-bold text-lg p-4 rounded-xl active:bg-blue-700 flex justify-between items-center">
+                            <span>${t('reviewRental')}</span>
+                            <span id="rental-items-count" class="bg-white text-blue-600 px-3 py-1 rounded-full text-sm">${totalSelected} ${t('items')}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.handleRateChange = (itemId, newRate) => {
+            if(state.rentalSelections[itemId]) {
+                state.rentalSelections[itemId].rate = parseFloat(newRate) || 0;
+            }
+        };
+
+        window.confirmRental = () => {
+            const pickupDate = document.getElementById('rs-date').value;
+            const client = state.clients.find(c => c.id === state.rentalClientId);
+            const items = Object.values(state.rentalSelections);
+
+            const rentalData = {
+                id: Date.now().toString(),
+                clientId: client.id,
+                clientName: client.name,
+                clientPhone: client.phone,
+                items,
+                pickupDate,
+                status: 'active',
+                createdAt: new Date().toISOString()
+            };
+            state.rentals.push(rentalData);
+
+            // Update Inventory logic (Decrease available, increase rented)
+            items.forEach(item => {
+                const invIndex = state.inventory.findIndex(i => i.id === item.id);
+                if(invIndex > -1) {
+                    const invItem = state.inventory[invIndex];
+                    const newRented = (invItem.rentedQty || 0) + item.qty;
+                    const newAvailable = invItem.totalQty - newRented - (invItem.damagedQty || 0);
+                    state.inventory[invIndex].rentedQty = newRented;
+                    state.inventory[invIndex].availableQty = newAvailable;
+                }
+            });
+
+            saveToLocal();
+            showToast(t('successRent'), 'success');
+            navigate('dashboard');
+        };
+
+        function renderRentalSummary() {
+            const client = state.clients.find(c => c.id === state.rentalClientId);
+            const items = Object.values(state.rentalSelections);
+            const today = new Date().toISOString().split('T')[0];
+
+            let itemsHtml = '';
+            items.forEach(item => {
+                itemsHtml += Card(`
+                    <div class="flex justify-between items-center w-full">
+                        <div>
+                            <div class="font-bold">${item.name}</div>
+                            <div class="text-sm text-gray-500">${t('qty')}: ${item.qty}</div>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-gray-500 mr-2">₹</span>
+                            <input type="number" class="w-20 p-2 border border-gray-200 rounded-lg text-center" value="${item.rate}" oninput="handleRateChange('${item.id}', this.value)">
+                            <span class="text-sm text-gray-500 ml-1">/${t('day')}</span>
+                        </div>
+                    </div>
+                `, '', 'mb-2');
+            });
+
+            return `
+                <div class="min-h-screen bg-gray-50 flex flex-col">
+                    ${TopBar(t('step3'), "navigate('rental-items', state.rentalClientId)")}
+                    <div class="p-4 flex-1 overflow-y-auto space-y-4 pb-28">
+                        ${Card(`
+                            <div class="text-sm text-gray-500 font-bold uppercase mb-1">${t('clientDetails')}</div>
+                            <div class="font-bold text-lg">${client.name}</div>
+                            <div>${client.phone}</div>
+                        `)}
+                        ${Card(`
+                            <div class="text-sm text-gray-500 font-bold uppercase mb-2">${t('pickupDate')}</div>
+                            <input id="rs-date" type="date" class="w-full p-3 border border-gray-200 rounded-lg text-lg outline-none" value="${today}">
+                        `)}
+                        <div>
+                            <div class="text-sm text-gray-500 font-bold uppercase mb-2 ml-1">${t('itemsAndRates')}</div>
+                            <div class="space-y-2">${itemsHtml}</div>
+                        </div>
+                    </div>
+                    <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                        <button onclick="confirmRental()" class="w-full bg-green-600 text-white font-bold text-lg p-4 rounded-xl flex items-center justify-center space-x-2 active:bg-green-700">
+                            <i data-lucide="check-circle" class="w-6 h-6"></i><span>${t('confirmRental')}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- RETURN FLOW ---
+        function renderReturnSelect() {
+            const activeRentals = state.rentals.filter(r => r.status === 'active');
+            let listHtml = '';
+            
+            if(activeRentals.length === 0) {
+                listHtml = `<div class="text-center text-gray-500 mt-10 p-6"><i data-lucide="check-circle" class="w-12 h-12 mx-auto text-green-400 mb-4"></i><p>${t('noActiveRentals')}</p></div>`;
+            } else {
+                activeRentals.forEach(r => {
+                    listHtml += Card(`
+                        <div class="flex justify-between items-start w-full">
+                            <div>
+                                <div class="font-bold text-lg text-gray-800">${r.clientName}</div>
+                                <div class="text-sm text-gray-500">${t('pickupDate')}: ${r.pickupDate}</div>
+                            </div>
+                            <div class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded">
+                                ${r.items.reduce((acc, i) => acc + i.qty, 0)} ${t('items')}
+                            </div>
+                        </div>
+                    `, `Maps('return-process', '${r.id}')`, 'mb-3');
+                });
+            }
+
+            return `
+                <div class="min-h-screen bg-gray-50">
+                    ${TopBar(t('selectReturn'), "navigate('dashboard')")}
+                    <div class="p-4 space-y-3">${listHtml}</div>
+                </div>
+            `;
+        }
+
+        window.handleReturnUpdate = (index, field, value) => {
+            const val = parseInt(value) || 0;
+            const item = state.returnState[index];
+            
+            if (field === 'damaged' || field === 'missing') {
+                item[field] = val;
+                const remaining = item.qty - item.damaged - item.missing;
+                item.returnedOk = Math.max(0, remaining);
+                document.getElementById(`ret-ok-${index}`).value = item.returnedOk;
+            } else if (field === 'returnedOk') {
+                item.returnedOk = val;
+                const remaining = item.qty - item.returnedOk - item.damaged;
+                item.missing = Math.max(0, remaining);
+                document.getElementById(`ret-missing-${index}`).value = item.missing;
+            }
+
+            // warning visibility toggle logic
+            const warningDiv = document.getElementById(`ret-warning-${index}`);
+            if(item.damaged > 0 || item.missing > 0) {
+                warningDiv.style.display = 'flex';
+                warningDiv.innerHTML = `<i data-lucide="alert-circle" class="w-4 h-4 mr-1"></i> ${t('warning')}: ${item.damaged} ${t('damaged')}, ${item.missing} ${t('missing')}.`;
+                lucide.createIcons();
+            } else {
+                warningDiv.style.display = 'none';
+            }
+        };
+
+        function renderReturnProcess() {
+            state.returnRentalId = state.navId;
+            const rental = state.rentals.find(r => r.id === state.returnRentalId);
+            if (!rental) return renderDashboard();
+
+            // Initialize return state
+            state.returnState = rental.items.map(item => ({
+                ...item, returnedOk: item.qty, damaged: 0, missing: 0
+            }));
+
+            let itemsHtml = '';
+            state.returnState.forEach((item, idx) => {
+                itemsHtml += `
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-4">
+                        <div class="font-bold text-lg border-b pb-2 mb-3">${item.name} (${t('rented')}: ${item.qty})</div>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div>
+                                <label class="block text-xs font-bold text-green-600 mb-1">${t('ok')}</label>
+                                <input id="ret-ok-${idx}" type="number" min="0" max="${item.qty}" class="w-full p-2 border border-gray-200 rounded bg-green-50 text-center font-bold" value="${item.returnedOk}" oninput="handleReturnUpdate(${idx}, 'returnedOk', this.value)">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-orange-500 mb-1">${t('damaged')}</label>
+                                <input id="ret-damaged-${idx}" type="number" min="0" max="${item.qty}" class="w-full p-2 border border-gray-200 rounded bg-orange-50 text-center font-bold" value="${item.damaged}" oninput="handleReturnUpdate(${idx}, 'damaged', this.value)">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-red-600 mb-1">${t('missing')}</label>
+                                <input id="ret-missing-${idx}" type="number" min="0" max="${item.qty}" class="w-full p-2 border border-gray-200 rounded bg-red-50 text-center font-bold" value="${item.missing}" oninput="handleReturnUpdate(${idx}, 'missing', this.value)">
+                            </div>
+                        </div>
+                        <div id="ret-warning-${idx}" class="mt-3 items-center text-xs text-red-500 bg-red-50 p-2 rounded" style="display: none;"></div>
+                    </div>
+                `;
+            });
+
+            return `
+                <div class="min-h-screen bg-gray-50 flex flex-col">
+                    ${TopBar(t('inspectReturns'), "navigate('return-select')")}
+                    <div class="p-4 flex-1 overflow-y-auto pb-28">
+                        <div class="mb-4 text-sm text-gray-500 font-bold uppercase">${t('client')}: ${rental.clientName}</div>
+                        ${itemsHtml}
+                    </div>
+                    <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                        <button onclick="navigate('return-billing')" class="w-full bg-blue-600 text-white font-bold text-lg p-4 rounded-xl active:bg-blue-700">
+                            ${t('proceedBilling')}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.updateBillingTotals = () => {
+            const damage = parseFloat(document.getElementById('bill-damage').value) || 0;
+            const missing = parseFloat(document.getElementById('bill-missing').value) || 0;
+            const discount = parseFloat(document.getElementById('bill-discount').value) || 0;
+            
+            const finalTotal = state.tempBillingData.baseTotal + damage + missing - discount;
+            state.tempBillingData.damage = damage;
+            state.tempBillingData.missing = missing;
+            state.tempBillingData.discount = discount;
+            state.tempBillingData.finalTotal = finalTotal;
+            
+            document.getElementById('bill-final-total').innerText = '₹' + finalTotal.toFixed(2);
+        };
+
+        window.updateBillingDays = () => {
+            const newRetDateStr = document.getElementById('bill-ret-date').value;
+            const rental = state.rentals.find(r => r.id === state.returnRentalId);
+            
+            const pickup = new Date(rental.pickupDate);
+            const ret = new Date(newRetDateStr);
+            const diffTime = ret - pickup;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const billableDays = diffDays <= 0 ? 1 : diffDays; 
+
+            state.tempBillingData.billableDays = billableDays;
+            state.tempBillingData.returnDate = newRetDateStr;
+
+            const baseTotal = state.returnState.reduce((sum, item) => sum + (item.qty * item.rate * billableDays), 0);
+            state.tempBillingData.baseTotal = baseTotal;
+            
+            document.getElementById('bill-days-text').innerText = `${billableDays} ${t('days')}`;
+            document.getElementById('bill-base-label').innerText = `${t('baseRental')} (${billableDays} ${t('days')})`;
+            document.getElementById('bill-base-total').innerText = '₹' + baseTotal.toFixed(2);
+            document.getElementById('bill-date-range').innerText = `${rental.pickupDate} to ${newRetDateStr}`;
+            
+            updateBillingTotals();
+        };
+
+        window.confirmReturnBilling = () => {
+            const rentalIndex = state.rentals.findIndex(r => r.id === state.returnRentalId);
+            if(rentalIndex === -1) return;
+
+            const rental = state.rentals[rentalIndex];
+            const data = state.tempBillingData;
+
+            const finalRentalData = {
+                ...rental,
+                status: 'returned',
+                returnDate: data.returnDate,
+                billableDays: data.billableDays,
+                returnState: state.returnState,
+                billing: {
+                    baseTotal: data.baseTotal,
+                    damageCharge: data.damage,
+                    missingCharge: data.missing,
+                    discount: data.discount,
+                    finalTotal: data.finalTotal
+                },
+                updatedAt: new Date().toISOString()
+            };
+
+            state.rentals[rentalIndex] = finalRentalData;
+
+            // Update Inventory quantities accurately
+            state.returnState.forEach(item => {
+                const invIndex = state.inventory.findIndex(i => i.id === item.id);
+                if (invIndex > -1) {
+                    const invItem = state.inventory[invIndex];
+                    const newRentedQty = Math.max(0, (invItem.rentedQty || 0) - item.qty);
+                    const newDamagedQty = (invItem.damagedQty || 0) + item.damaged;
+                    const newAvailableQty = invItem.totalQty - newRentedQty - newDamagedQty;
+                    
+                    state.inventory[invIndex].availableQty = newAvailableQty;
+                    state.inventory[invIndex].rentedQty = newRentedQty;
+                    state.inventory[invIndex].damagedQty = newDamagedQty;
+                }
+            });
+
+            saveToLocal();
+            showToast(t('successRet'), 'success');
+            navigate('invoice', finalRentalData.id);
+        };
+
+        function renderReturnBilling() {
+            const rental = state.rentals.find(r => r.id === state.returnRentalId);
+            if (!rental) return renderDashboard();
+
+            const today = new Date().toISOString().split('T')[0];
+            const pickup = new Date(rental.pickupDate);
+            const ret = new Date(today);
+            const diffDays = Math.ceil((ret - pickup) / (1000 * 60 * 60 * 24));
+            const initBillableDays = diffDays <= 0 ? 1 : diffDays; 
+            const initBaseTotal = state.returnState.reduce((sum, item) => sum + (item.qty * item.rate * initBillableDays), 0);
+
+            // Setup initial temp data
+            state.tempBillingData = {
+                returnDate: today,
+                billableDays: initBillableDays,
+                baseTotal: initBaseTotal,
+                damage: 0, missing: 0, discount: 0,
+                finalTotal: initBaseTotal
+            };
+
+            return `
+                <div class="min-h-screen bg-gray-50 flex flex-col">
+                    ${TopBar(t('billingSummary'), `Maps('return-process', '${rental.id}')`)}
+                    <div class="p-4 flex-1 overflow-y-auto pb-28 space-y-4">
+                        ${Card(`
+                            <div class="flex justify-between items-center bg-blue-50">
+                                <div>
+                                    <div class="text-sm font-bold text-blue-800">${t('rentalDuration')}</div>
+                                    <div id="bill-date-range" class="text-xs text-blue-600">${rental.pickupDate} to ${today}</div>
+                                </div>
+                                <div id="bill-days-text" class="text-2xl font-black text-blue-700">${initBillableDays} ${t('days')}</div>
+                            </div>
+                        `, '', 'bg-blue-50 border-blue-100')}
+
+                        ${Card(`
+                            <div class="text-sm text-gray-500 font-bold uppercase mb-2">${t('adjustReturnDate')}</div>
+                            <input id="bill-ret-date" type="date" class="w-full p-3 border border-gray-200 rounded-lg text-lg outline-none font-bold text-gray-700" value="${today}" oninput="updateBillingDays()">
+                        `)}
+
+                        ${Card(`
+                            <div class="text-sm text-gray-500 font-bold uppercase mb-3 border-b pb-2">${t('chargesCalc')}</div>
+                            
+                            <div class="flex justify-between items-center mb-2">
+                                <span id="bill-base-label" class="text-gray-600">${t('baseRental')} (${initBillableDays} ${t('days')})</span>
+                                <span id="bill-base-total" class="font-bold">₹${initBaseTotal.toFixed(2)}</span>
+                            </div>
+
+                            <div class="flex justify-between items-center mb-2 mt-4">
+                                <span class="text-sm text-gray-600 w-1/2">${t('damagePenalties')}</span>
+                                <input id="bill-damage" type="number" class="w-1/3 p-2 border border-gray-200 rounded text-right" value="0" oninput="updateBillingTotals()">
+                            </div>
+
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm text-gray-600 w-1/2">${t('missingFees')}</span>
+                                <input id="bill-missing" type="number" class="w-1/3 p-2 border border-gray-200 rounded text-right" value="0" oninput="updateBillingTotals()">
+                            </div>
+
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="text-sm text-gray-600 w-1/2">${t('discount')}</span>
+                                <input id="bill-discount" type="number" class="w-1/3 p-2 border border-gray-200 rounded text-right text-green-600" value="0" oninput="updateBillingTotals()">
+                            </div>
+
+                            <div class="border-t pt-3 flex justify-between items-center">
+                                <span class="text-xl font-black">${t('finalBill')}</span>
+                                <span id="bill-final-total" class="text-3xl font-black text-blue-600">₹${initBaseTotal.toFixed(2)}</span>
+                            </div>
+                        `)}
+                    </div>
+
+                    <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                        <button onclick="confirmReturnBilling()" class="w-full bg-green-600 text-white font-bold text-lg p-4 rounded-xl active:bg-green-700">
+                            ${t('confirmInvoice')}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- INVOICE ---
+        window.handleShareWhatsapp = () => {
+            const rental = state.rentals.find(r => r.id === state.navId);
+            const text = `Invoice from ${t('appName')}\nClient: ${rental.clientName}\nDates: ${rental.pickupDate} to ${rental.returnDate}\nTotal Amount: ₹${rental.billing.finalTotal}\nThank you for your business!`;
+            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        };
+
+        window.handleGeneratePdf = () => {
+            const rental = state.rentals.find(r => r.id === state.navId);
+            const btn = document.getElementById('btn-pdf');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="printer" class="w-5 h-5 mr-2"></i><span>${t('processing')}</span>`;
+            btn.disabled = true;
+            lucide.createIcons();
+
+            // Load html2pdf dynamically if missing
+            const generate = () => {
+                const element = document.getElementById('invoice-printable-area');
+                const opt = {
+                    margin: 10,
+                    filename: `Invoice-${rental.clientName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+                window.html2pdf().set(opt).from(element).save().then(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    lucide.createIcons();
+                }).catch(err => {
+                    console.error(err);
+                    window.print();
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    lucide.createIcons();
+                });
+            };
+
+            if (!window.html2pdf) {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                script.onload = generate;
+                document.head.appendChild(script);
+            } else {
+                generate();
+            }
+        };
+
+        function renderInvoice() {
+            const rental = state.rentals.find(r => r.id === state.navId);
+            if (!rental) return renderDashboard();
+
+            let itemsTableHtml = '';
+            rental.returnState.forEach((item) => {
+                itemsTableHtml += `
+                    <tr class="border-b border-gray-100">
+                        <td class="py-2 font-medium">${item.name}</td>
+                        <td class="py-2 text-center">${item.qty}</td>
+                        <td class="py-2 text-right">₹${item.rate}</td>
+                        <td class="py-2 text-right font-medium">₹${(item.qty * item.rate * rental.billableDays).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            return `
+                <div class="min-h-screen bg-white flex flex-col print:bg-white print:m-0 print:p-0">
+                    ${TopBar(t('invoice'), "navigate('dashboard')", `<button onclick="navigate('dashboard')" class="font-bold text-sm">${t('done')}</button>`)}
+                    
+                    <div id="invoice-printable-area" class="p-6 flex-1 text-sm text-gray-800 print:p-0 bg-white">
+                        <div class="text-center mb-6 flex flex-col items-center">
+                            ${AppLogo(48, "mb-2 print:border print:border-gray-200 print:rounded-xl")}
+                            <h1 class="text-2xl font-black text-gray-900 uppercase tracking-widest">${t('invoice')}</h1>
+                            <p class="text-gray-500 mt-1">${t('appName')}</p>
+                        </div>
+
+                        <div class="flex justify-between mb-8 border-b pb-4">
+                            <div>
+                                <div class="text-xs text-gray-500 uppercase font-bold">${t('billedTo')}</div>
+                                <div class="font-bold text-base">${rental.clientName}</div>
+                                <div>${rental.clientPhone}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-500 uppercase font-bold">${t('invoiceDate')}</div>
+                                <div class="font-bold">${new Date().toISOString().split('T')[0]}</div>
+                                <div class="text-xs text-gray-500 uppercase font-bold mt-2">${t('duration')}</div>
+                                <div>${rental.billableDays} ${t('days')}</div>
+                            </div>
+                        </div>
+
+                        <table class="w-full mb-6">
+                            <thead>
+                                <tr class="border-b-2 border-gray-800 text-left">
+                                    <th class="py-2">${t('item')}</th>
+                                    <th class="py-2 text-center">${t('qty')}</th>
+                                    <th class="py-2 text-right">${t('rate')}</th>
+                                    <th class="py-2 text-right">${t('total')}</th>
+                                </tr>
+                            </thead>
+                            <tbody>${itemsTableHtml}</tbody>
+                        </table>
+
+                        <div class="w-64 ml-auto">
+                            <div class="flex justify-between py-1">
+                                <span class="text-gray-500">${t('baseRental')}</span>
+                                <span>₹${rental.billing.baseTotal.toFixed(2)}</span>
+                            </div>
+                            ${rental.billing.damageCharge > 0 ? `<div class="flex justify-between py-1"><span class="text-gray-500">${t('damagePenalties')}</span><span>₹${rental.billing.damageCharge.toFixed(2)}</span></div>` : ''}
+                            ${rental.billing.missingCharge > 0 ? `<div class="flex justify-between py-1"><span class="text-gray-500">${t('missingFees')}</span><span>₹${rental.billing.missingCharge.toFixed(2)}</span></div>` : ''}
+                            ${rental.billing.discount > 0 ? `<div class="flex justify-between py-1 text-green-600"><span>${t('discount')}</span><span>-₹${rental.billing.discount.toFixed(2)}</span></div>` : ''}
+                            <div class="flex justify-between py-2 border-t-2 border-gray-800 mt-2">
+                                <span class="font-bold text-lg">${t('netTotal')}</span>
+                                <span class="font-black text-xl">₹${rental.billing.finalTotal.toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-12 text-center text-xs text-gray-400">
+                            ${t('thankYou')}
+                        </div>
+                    </div>
+
+                    <div class="p-4 grid grid-cols-2 gap-4 bg-gray-50 print:hidden border-t mt-auto">
+                        <button id="btn-pdf" onclick="handleGeneratePdf()" class="flex items-center justify-center space-x-2 bg-gray-200 text-gray-800 p-4 rounded-xl font-bold active:bg-gray-300">
+                            <i data-lucide="printer" class="w-5 h-5"></i><span>${t('savePdf')}</span>
+                        </button>
+                        <button onclick="handleShareWhatsapp()" class="flex items-center justify-center space-x-2 bg-green-500 text-white p-4 rounded-xl font-bold active:bg-green-600 shadow-md">
+                            <i data-lucide="share-2" class="w-5 h-5"></i><span>${t('whatsapp')}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- REPORTS ---
+        function renderReports() {
+            const completedRentals = state.rentals.filter(r => r.status === 'returned');
+            const activeRentalsCount = state.rentals.filter(r => r.status === 'active').length;
+            const totalRevenue = completedRentals.reduce((sum, r) => sum + (r.billing?.finalTotal || 0), 0);
+
+            let recentHtml = '';
+            if (completedRentals.length === 0) {
+                recentHtml = `<div class="text-center text-gray-500 p-4">${t('noTransactions')}</div>`;
+            } else {
+                completedRentals.slice().reverse().slice(0, 10).forEach(r => {
+                    recentHtml += Card(`
+                        <div class="flex justify-between items-center w-full">
+                            <div>
+                                <div class="font-bold text-gray-800">${r.clientName}</div>
+                                <div class="text-xs text-gray-500">${r.returnDate} • ${r.billableDays} ${t('days')}</div>
+                            </div>
+                            <div class="font-bold text-green-600">+₹${r.billing.finalTotal.toFixed(0)}</div>
+                        </div>
+                    `, `Maps('invoice', '${r.id}')`, 'mb-2');
+                });
+            }
+
+            return `
+                <div class="min-h-screen bg-gray-50 pb-10">
+                    ${TopBar(t('reportsOverview'), "navigate('dashboard')")}
+                    <div class="p-4 space-y-4">
+                        <div class="bg-gradient-to-br from-blue-600 to-indigo-800 p-6 rounded-2xl text-white shadow-lg">
+                            <div class="text-sm text-blue-200 uppercase font-bold tracking-wider mb-1">${t('totalRevenue')}</div>
+                            <div class="text-4xl font-black mb-4">₹${totalRevenue.toFixed(0)}</div>
+                            <div class="flex justify-between border-t border-blue-500/50 pt-4">
+                                <div>
+                                    <div class="text-xs text-blue-200">${t('completedRentals')}</div>
+                                    <div class="text-xl font-bold">${completedRentals.length}</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs text-blue-200">${t('activeYardOut')}</div>
+                                    <div class="text-xl font-bold">${activeRentalsCount}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <h2 class="text-sm font-bold text-gray-500 uppercase ml-1 mt-6">${t('recentTransactions')}</h2>
+                        <div class="space-y-2">${recentHtml}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- APP INITIALIZATION ---
+        initFavicon();
+        renderApp();
+
+        // --- SERVICE WORKER REGISTRATION (For PWA Install) ---
+        if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.protocol === 'http:')) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker Registered!', reg))
+                    .catch(err => console.log('Service Worker Registration Skipped/Failed (expected in preview env).', err));
+            });
+        } else {
+            console.log('Service Worker registration skipped due to unsupported protocol (e.g., blob/file).');
+        }
+
+    </script>
+</body>
+</html>

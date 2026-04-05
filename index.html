@@ -1154,15 +1154,43 @@
         initFavicon();
         renderApp();
 
-        // --- SERVICE WORKER REGISTRATION (For PWA Install) ---
-        if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.protocol === 'http:')) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker Registered!', reg))
-                    .catch(err => console.log('Service Worker Registration Skipped/Failed (expected in preview env).', err));
-            });
+        // --- CACHE BUSTING & SERVICE WORKER ---
+        const APP_VERSION = '1.0.3'; 
+        if (localStorage.getItem('app_version') !== APP_VERSION) {
+            localStorage.setItem('app_version', APP_VERSION);
+            
+            // Only attempt SW tasks on valid protocols
+            const isSupportedProtocol = window.location.protocol === 'https:' || window.location.protocol === 'http:';
+            
+            if ('serviceWorker' in navigator && isSupportedProtocol) {
+                navigator.serviceWorker.getRegistrations()
+                    .then(registrations => {
+                        registrations.forEach(reg => reg.unregister());
+                    })
+                    .catch(err => console.log('SW unregistration skipped:', err));
+            }
+            
+            if (window.caches && isSupportedProtocol) {
+                caches.keys()
+                    .then(names => {
+                        Promise.all(names.map(name => caches.delete(name))).then(() => {
+                            window.location.reload(true); 
+                        });
+                    })
+                    .catch(err => console.log('Cache deletion skipped:', err));
+            }
         } else {
-            console.log('Service Worker registration skipped due to unsupported protocol (e.g., blob/file).');
+            // Register normally if on current version
+            if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.protocol === 'http:')) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('./sw.js')
+                        .then(reg => {
+                            console.log('Service Worker Registered!', reg);
+                            reg.update();
+                        })
+                        .catch(err => console.log('Service Worker Registration Skipped/Failed.', err));
+                });
+            }
         }
 
     </script>

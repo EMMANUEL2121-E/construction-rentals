@@ -101,12 +101,23 @@
             rentals: JSON.parse(localStorage.getItem('mstraders_rentals')) || [],
             
             // Transient states for flows
-            rentalSelections: {}, // { itemId: qty }
+            rentalSelections: {}, 
             rentalClientId: null,
-            returnState: [], // [{ id, qty, returnedOk, damaged, missing, rate, name }]
+            returnState: [], 
             returnRentalId: null,
-            tempBillingData: null // Stores calculated data for billing step
+            tempBillingData: null 
         };
+
+        // --- GLOBAL NAVIGATION ROUTER (Event Delegation) ---
+        // This completely fixes the "Maps" or string evaluation errors
+        document.addEventListener('click', (e) => {
+            const navEl = e.target.closest('[data-navigate]');
+            if (navEl) {
+                const view = navEl.getAttribute('data-navigate');
+                const id = navEl.getAttribute('data-id');
+                navigate(view, id || null);
+            }
+        });
 
         // --- UTILITY FUNCTIONS ---
         const t = (key) => dictionary[state.lang][key] || key;
@@ -128,7 +139,7 @@
 
         window.navigate = (view, dataId = null) => {
             state.currentView = view;
-            state.navId = dataId;
+            state.navId = (dataId && dataId !== 'null' && dataId !== 'undefined') ? dataId : null;
             // Reset transient states if going to dashboard or starting new flows
             if(view === 'dashboard' || view === 'rental-start') {
                 state.rentalSelections = {};
@@ -151,22 +162,23 @@
             </svg>
         `;
 
-        const TopBar = (title, backAction = null, rightAction = '') => `
+        const TopBar = (title, backView = '', backId = '', rightAction = '') => `
             <div class="bg-blue-600 text-white p-4 flex items-center shadow-md sticky top-0 z-10 print:hidden">
-                ${backAction ? `<button onclick="${backAction}" class="mr-3 p-1 rounded-full hover:bg-blue-700 active:bg-blue-800 transition"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>` : ''}
+                ${backView ? `<button data-navigate="${backView}" data-id="${backId}" class="mr-3 p-1 rounded-full hover:bg-blue-700 active:bg-blue-800 transition"><i data-lucide="chevron-left" class="w-6 h-6"></i></button>` : ''}
                 <h1 class="text-lg font-bold flex-1">${title}</h1>
                 ${rightAction}
             </div>
         `;
 
-        const Card = (content, onClick = '', extraClass = '') => `
-            <div ${onClick ? `onclick="${onClick}"` : ''} class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 ${onClick ? 'active:bg-gray-50 cursor-pointer' : ''} ${extraClass}">
+        // Updated safe Card router
+        const Card = (content, routeView = '', routeId = '', extraClass = '') => `
+            <div ${routeView ? `data-navigate="${routeView}" data-id="${routeId}"` : ''} class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 ${routeView ? 'active:bg-gray-50 cursor-pointer' : ''} ${extraClass}">
                 ${content}
             </div>
         `;
 
-        const FAB = (icon, onClick) => `
-            <button onclick="${onClick}" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 active:scale-95 transition-transform print:hidden">
+        const FAB = (icon, view) => `
+            <button data-navigate="${view}" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 active:scale-95 transition-transform print:hidden">
                 <i data-lucide="${icon}" class="w-6 h-6"></i>
             </button>
         `;
@@ -205,7 +217,7 @@
             }
 
             appDiv.innerHTML = html;
-            lucide.createIcons(); // Re-initialize icons for new DOM elements
+            lucide.createIcons(); // Re-initialize icons
         }
 
         // --- VIEW GENERATORS ---
@@ -245,22 +257,22 @@
                     </div>
 
                     <div class="p-4 grid grid-cols-2 gap-4 mt-2">
-                        <button onclick="navigate('rental-start')" class="flex flex-col items-center justify-center p-6 rounded-2xl text-white shadow-sm active:scale-95 transition-transform bg-blue-600">
+                        <button data-navigate="rental-start" class="flex flex-col items-center justify-center p-6 rounded-2xl text-white shadow-sm active:scale-95 transition-transform bg-blue-600">
                             <i data-lucide="clipboard-list" class="w-8 h-8 mb-2"></i><span class="font-semibold text-center">${t('newRental')}</span>
                         </button>
-                        <button onclick="navigate('return-select')" class="flex flex-col items-center justify-center p-6 rounded-2xl text-white shadow-sm active:scale-95 transition-transform bg-indigo-600">
+                        <button data-navigate="return-select" class="flex flex-col items-center justify-center p-6 rounded-2xl text-white shadow-sm active:scale-95 transition-transform bg-indigo-600">
                             <i data-lucide="rotate-ccw" class="w-8 h-8 mb-2"></i><span class="font-semibold text-center">${t('returnItems')}</span>
                         </button>
-                        <button onclick="navigate('clients')" class="flex flex-col items-center justify-center p-6 rounded-2xl text-white shadow-sm active:scale-95 transition-transform bg-teal-600">
+                        <button data-navigate="clients" class="flex flex-col items-center justify-center p-6 rounded-2xl text-white shadow-sm active:scale-95 transition-transform bg-teal-600">
                             <i data-lucide="user" class="w-8 h-8 mb-2"></i><span class="font-semibold text-center">${t('clients')}</span>
                         </button>
-                        <button onclick="navigate('inventory')" class="flex flex-col items-center justify-center p-6 rounded-2xl text-white shadow-sm active:scale-95 transition-transform bg-sky-600">
+                        <button data-navigate="inventory" class="flex flex-col items-center justify-center p-6 rounded-2xl text-white shadow-sm active:scale-95 transition-transform bg-sky-600">
                             <i data-lucide="package" class="w-8 h-8 mb-2"></i><span class="font-semibold text-center">${t('inventory')}</span>
                         </button>
                     </div>
 
                     <div class="px-4 mt-2">
-                        <button onclick="navigate('reports')" class="w-full flex items-center justify-center space-x-2 bg-gray-800 text-white p-4 rounded-2xl active:bg-gray-700">
+                        <button data-navigate="reports" class="w-full flex items-center justify-center space-x-2 bg-gray-800 text-white p-4 rounded-2xl active:bg-gray-700">
                             <i data-lucide="file-text" class="w-5 h-5"></i>
                             <span class="font-semibold">${t('reports')}</span>
                         </button>
@@ -280,7 +292,7 @@
                     <div class="font-bold text-lg text-gray-800">${c.name}</div>
                     <div class="text-gray-600">${c.phone}</div>
                     ${c.location ? `<div class="text-sm text-gray-500 mt-1">📍 ${c.location}</div>` : ''}
-                `, `Maps('client-details', '${c.id}')`, 'mb-3');
+                `, 'client-details', c.id, 'mb-3');
             });
             document.getElementById('client-list').innerHTML = listHtml;
         };
@@ -288,7 +300,7 @@
         function renderClients() {
             return `
                 <div class="min-h-screen bg-gray-50">
-                    ${TopBar(t('clients'), "navigate('dashboard')")}
+                    ${TopBar(t('clients'), 'dashboard')}
                     <div class="p-4 pb-24">
                         <div class="bg-white rounded-xl flex items-center p-3 mb-4 shadow-sm border border-gray-100 relative">
                             <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-4"></i>
@@ -300,11 +312,11 @@
                                     <div class="font-bold text-lg text-gray-800">${c.name}</div>
                                     <div class="text-gray-600">${c.phone}</div>
                                     ${c.location ? `<div class="text-sm text-gray-500 mt-1">📍 ${c.location}</div>` : ''}
-                                `, `Maps('client-details', '${c.id}')`, 'mb-3')).join('')
+                                `, 'client-details', c.id, 'mb-3')).join('')
                             }
                         </div>
                     </div>
-                    ${FAB('plus', "navigate('client-form')")}
+                    ${FAB('plus', 'client-form')}
                 </div>
             `;
         }
@@ -325,7 +337,7 @@
         function renderClientForm() {
             return `
                 <div class="min-h-screen bg-white">
-                    ${TopBar(t('newClient'), "navigate('clients')")}
+                    ${TopBar(t('newClient'), 'clients')}
                     <div class="p-6 space-y-5">
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">${t('fullName')}</label>
@@ -376,12 +388,12 @@
                         ${statusBadge}
                     </div>
                     ${billingHtml}
-                `, `Maps('${r.status === 'returned' ? 'invoice' : 'return-process'}', '${r.id}')`, 'mb-2');
+                `, r.status === 'returned' ? 'invoice' : 'return-process', r.id, 'mb-2');
             });
 
             return `
                 <div class="min-h-screen bg-gray-50 flex flex-col">
-                    ${TopBar(client.name, "navigate('clients')")}
+                    ${TopBar(client.name, 'clients')}
                     <div class="p-4 flex-1 overflow-y-auto pb-24 space-y-4">
                         ${Card(`
                             <div class="text-sm font-bold text-gray-500 uppercase mb-2">${t('clientDetails')}</div>
@@ -413,14 +425,14 @@
                             <div class="text-xs text-gray-500">${t('total')}: ${item.totalQty} | ${t('out')}: ${item.rentedQty || 0}</div>
                         </div>
                     </div>
-                `, `Maps('inventory-form', '${item.id}')`, 'mb-3');
+                `, 'inventory-form', item.id, 'mb-3');
             });
 
             return `
                 <div class="min-h-screen bg-gray-50">
-                    ${TopBar(t('inventory'), "navigate('dashboard')")}
+                    ${TopBar(t('inventory'), 'dashboard')}
                     <div class="p-4 pb-24 space-y-3">${listHtml}</div>
-                    ${FAB('plus', "navigate('inventory-form')")}
+                    ${FAB('plus', 'inventory-form')}
                 </div>
             `;
         }
@@ -472,7 +484,7 @@
 
             return `
                 <div class="min-h-screen bg-white">
-                    ${TopBar(isEdit ? t('editItem') : t('addItem'), "navigate('inventory')")}
+                    ${TopBar(isEdit ? t('editItem') : t('addItem'), 'inventory')}
                     <div class="p-6 space-y-5">
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">${t('itemName')}</label>
@@ -503,7 +515,7 @@
                 listHtml += Card(`
                     <div class="font-bold text-lg text-gray-800">${c.name}</div>
                     <div class="text-gray-500 text-sm">${c.phone}</div>
-                `, `Maps('rental-items', '${c.id}')`, 'hover:border-blue-500 border-2 border-transparent mb-2');
+                `, 'rental-items', c.id, 'hover:border-blue-500 border-2 border-transparent mb-2');
             });
             document.getElementById('rental-client-list').innerHTML = listHtml;
         };
@@ -511,7 +523,7 @@
         function renderRentalStart() {
             return `
                 <div class="min-h-screen bg-gray-50 flex flex-col">
-                    ${TopBar(t('step1'), "navigate('dashboard')")}
+                    ${TopBar(t('step1'), 'dashboard')}
                     <div class="p-4 flex-1">
                         <div class="bg-white rounded-xl flex items-center p-3 mb-4 shadow-sm border border-gray-200 relative">
                             <i data-lucide="search" class="w-5 h-5 text-gray-400 absolute left-4"></i>
@@ -521,7 +533,7 @@
                             ${state.clients.map(c => Card(`
                                 <div class="font-bold text-lg text-gray-800">${c.name}</div>
                                 <div class="text-gray-500 text-sm">${c.phone}</div>
-                            `, `Maps('rental-items', '${c.id}')`, 'hover:border-blue-500 border-2 border-transparent mb-2')).join('')}
+                            `, 'rental-items', c.id, 'hover:border-blue-500 border-2 border-transparent mb-2')).join('')}
                         </div>
                     </div>
                 </div>
@@ -576,21 +588,21 @@
                             </button>
                         </div>
                     </div>
-                `, '', 'mb-3');
+                `, '', '', 'mb-3');
             });
 
             const totalSelected = Object.values(state.rentalSelections).reduce((acc, curr) => acc + curr.qty, 0);
 
             return `
                 <div class="min-h-screen bg-gray-50 flex flex-col">
-                    ${TopBar(t('step2'), "navigate('rental-start')")}
+                    ${TopBar(t('step2'), 'rental-start')}
                     <div class="p-4 pb-28 flex-1 overflow-y-auto">
                         <div class="mb-4 text-sm text-gray-500 font-bold uppercase">${t('client')}: ${client.name}</div>
                         <div class="space-y-3">${itemsHtml}</div>
                     </div>
                     
                     <div id="rental-items-footer" class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] border-t border-gray-100" style="display: ${totalSelected > 0 ? 'block' : 'none'};">
-                        <button onclick="navigate('rental-summary')" class="w-full bg-blue-600 text-white font-bold text-lg p-4 rounded-xl active:bg-blue-700 flex justify-between items-center">
+                        <button data-navigate="rental-summary" class="w-full bg-blue-600 text-white font-bold text-lg p-4 rounded-xl active:bg-blue-700 flex justify-between items-center">
                             <span>${t('reviewRental')}</span>
                             <span id="rental-items-count" class="bg-white text-blue-600 px-3 py-1 rounded-full text-sm">${totalSelected} ${t('items')}</span>
                         </button>
@@ -658,12 +670,12 @@
                             <span class="text-sm text-gray-500 ml-1">/${t('day')}</span>
                         </div>
                     </div>
-                `, '', 'mb-2');
+                `, '', '', 'mb-2');
             });
 
             return `
                 <div class="min-h-screen bg-gray-50 flex flex-col">
-                    ${TopBar(t('step3'), "navigate('rental-items', state.rentalClientId)")}
+                    ${TopBar(t('step3'), 'rental-items', state.rentalClientId)}
                     <div class="p-4 flex-1 overflow-y-auto space-y-4 pb-28">
                         ${Card(`
                             <div class="text-sm text-gray-500 font-bold uppercase mb-1">${t('clientDetails')}</div>
@@ -707,13 +719,13 @@
                                 ${r.items.reduce((acc, i) => acc + i.qty, 0)} ${t('items')}
                             </div>
                         </div>
-                    `, `Maps('return-process', '${r.id}')`, 'mb-3');
+                    `, 'return-process', r.id, 'mb-3');
                 });
             }
 
             return `
                 <div class="min-h-screen bg-gray-50">
-                    ${TopBar(t('selectReturn'), "navigate('dashboard')")}
+                    ${TopBar(t('selectReturn'), 'dashboard')}
                     <div class="p-4 space-y-3">${listHtml}</div>
                 </div>
             `;
@@ -782,13 +794,13 @@
 
             return `
                 <div class="min-h-screen bg-gray-50 flex flex-col">
-                    ${TopBar(t('inspectReturns'), "navigate('return-select')")}
+                    ${TopBar(t('inspectReturns'), 'return-select')}
                     <div class="p-4 flex-1 overflow-y-auto pb-28">
                         <div class="mb-4 text-sm text-gray-500 font-bold uppercase">${t('client')}: ${rental.clientName}</div>
                         ${itemsHtml}
                     </div>
                     <div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-                        <button onclick="navigate('return-billing')" class="w-full bg-blue-600 text-white font-bold text-lg p-4 rounded-xl active:bg-blue-700">
+                        <button data-navigate="return-billing" class="w-full bg-blue-600 text-white font-bold text-lg p-4 rounded-xl active:bg-blue-700">
                             ${t('proceedBilling')}
                         </button>
                     </div>
@@ -901,7 +913,7 @@
 
             return `
                 <div class="min-h-screen bg-gray-50 flex flex-col">
-                    ${TopBar(t('billingSummary'), `Maps('return-process', '${rental.id}')`)}
+                    ${TopBar(t('billingSummary'), 'return-process', rental.id)}
                     <div class="p-4 flex-1 overflow-y-auto pb-28 space-y-4">
                         ${Card(`
                             <div class="flex justify-between items-center bg-blue-50">
@@ -911,7 +923,7 @@
                                 </div>
                                 <div id="bill-days-text" class="text-2xl font-black text-blue-700">${initBillableDays} ${t('days')}</div>
                             </div>
-                        `, '', 'bg-blue-50 border-blue-100')}
+                        `, '', '', 'bg-blue-50 border-blue-100')}
 
                         ${Card(`
                             <div class="text-sm text-gray-500 font-bold uppercase mb-2">${t('adjustReturnDate')}</div>
@@ -1024,7 +1036,7 @@
 
             return `
                 <div class="min-h-screen bg-white flex flex-col print:bg-white print:m-0 print:p-0">
-                    ${TopBar(t('invoice'), "navigate('dashboard')", `<button onclick="navigate('dashboard')" class="font-bold text-sm">${t('done')}</button>`)}
+                    ${TopBar(t('invoice'), 'dashboard', '', `<button data-navigate="dashboard" class="font-bold text-sm">${t('done')}</button>`)}
                     
                     <div id="invoice-printable-area" class="p-6 flex-1 text-sm text-gray-800 print:p-0 bg-white">
                         <div class="text-center mb-6 flex flex-col items-center">
@@ -1109,13 +1121,13 @@
                             </div>
                             <div class="font-bold text-green-600">+₹${r.billing.finalTotal.toFixed(0)}</div>
                         </div>
-                    `, `Maps('invoice', '${r.id}')`, 'mb-2');
+                    `, 'invoice', r.id, 'mb-2');
                 });
             }
 
             return `
                 <div class="min-h-screen bg-gray-50 pb-10">
-                    ${TopBar(t('reportsOverview'), "navigate('dashboard')")}
+                    ${TopBar(t('reportsOverview'), 'dashboard')}
                     <div class="p-4 space-y-4">
                         <div class="bg-gradient-to-br from-blue-600 to-indigo-800 p-6 rounded-2xl text-white shadow-lg">
                             <div class="text-sm text-blue-200 uppercase font-bold tracking-wider mb-1">${t('totalRevenue')}</div>
